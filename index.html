@@ -1,1037 +1,975 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { 
-    Menu, X, Globe, ChevronDown, Facebook, Instagram, Youtube, Mail, Phone, Clock, FileText, 
-    GraduationCap, DollarSign, Pin, Zap
-} from 'lucide-react';
-
-// --- CONFIGURATION: LINKS & TRANSLATIONS ---
-
-const STATIC_LINKS = {
-    ncnu: "https://www.ncnu.edu.tw",
-    baitia_home: "https://baitia.ncnu.edu.tw/p/404-1084-24750.php?Lang=en",
-    curriculum_planning: "https://baitia.ncnu.edu.tw/p/404-1084-24760.php?Lang=en",
-    apply_now: "https://exam.ncnu.edu.tw/114FApply.html",
-    logo: "https://service.ncnu.edu.tw/ncnuweb/units/share/%E5%85%A8%E6%A0%A1%E5%85%B1%E7%94%A8/web_material/images/logo/ps/NCNU_logo%E5%9C%96%E8%88%87%E5%BA%95%E6%96%87%E5%AD%97.jpg",
-    social: {
-        facebook: "https://www.facebook.com/baitiancnu/?rdid=ZQtesH4eDDf9BTsy",
-        instagram: "https://www.instagram.com/ncnu_baitia/?igsh=d2F6cWpudmU5M3Jp&utm_source=qr#",
-        youtube: "https://www.youtube.com/channel/UCfW7jAUBy-yxZCxlsxe5ERg",
-    },
-    curriculum_departments: [
-        { name_en: "International Studies", name_zh: "國際關係學系", url: "https://baitia.ncnu.edu.tw/p/403-1084-1146.php?Lang=en" },
-        { name_en: "Banking and Finance", name_zh: "財務金融學系", url: "https://baitia.ncnu.edu.tw/p/403-1084-1148.php?Lang=en" },
-        { name_en: "Economics", name_zh: "經濟學系", url: "https://baitia.ncnu.edu.tw/p/403-1084-1145.php?Lang=en" },
-        { name_en: "Information Management", name_zh: "資訊管理學系", url: "https://baitia.ncnu.edu.tw/p/403-1084-1147.php?Lang=en" },
-        { name_en: "Tourism", name_zh: "觀光休閒與餐旅管理學系", url: "https://baitia.ncnu.edu.tw/p/403-1084-1149.php?Lang=en" },
-        { name_en: "Computer Science", name_zh: "資訊工程學系", url: "https://baitia.ncnu.edu.tw/p/403-1084-1151.php?Lang=en" },
-    ]
-};
-
-const I18N_DATA = {
-    'en': {
-        site: {
-            title: "Next Horizon: Business Management & IT Innovation",
-            subline: "National Chi Nan University (NCNU)",
-            department: "Department of Business Administration and Innovation Technology Innovation and Application (BAITIA)",
-            department_short: "BAITIA"
-        },
-        nav: {
-            home: "Home",
-            curriculum: "Curriculum Planning",
-            admission: "Admission",
-            other_depts: "Other Departments"
-        },
-        lang: {
-            en: "EN",
-            zh_tw: "繁中",
-            toggle_aria: "Switch Language"
-        },
-        // --- HOME PAGE ---
-        hero: {
-            // UPDATED: Swap hero title
-            title: "Business Administration and Information Technology Innovation and Application",
-            subtitle: "A Master's program at NCNU's BAITIA — Learn from experts in five management disciplines shaping the global business landscape.",
-            alt_text: "National Chi Nan University campus vista with green mountains and reflective lake at sunset."
-        },
-        cta: {
-            apply: "Apply Now",
-            curriculum: "View Curriculum",
-            contact: "Contact Us",
-            program_link: "Program Details",
-            curriculum_link: "Full Curriculum Guide",
-            admission_link: "Application Steps"
-        },
-        panel: {
-            program_overview: "Program Overview & Features",
-            program_desc: "Discover our dual-focus approach combining core business strategy with cutting-edge IT and innovation applications.",
-            curriculum_snapshot: "Curriculum Snapshot",
-            curriculum_desc: "See a detailed list of our specialized courses designed to meet future industry demands.",
-            connect: "Connect with BAITIA",
-            connect_desc: "View application steps, tuition fees, and required documents to begin your journey.",
-        },
-        // --- CURRICULUM PAGE ---
-        curriculum: {
-            title: "Curriculum Planning",
-            link_desc: "For the complete and latest curriculum details, please visit the official BAITIA planning page:",
-            course_title: "Core and Elective Courses Snapshot",
-            explain_cta: "Course Explainer ✨",
-            explain_loading: "Generating explanation...",
-            explain_error: "Sorry, the explainer service failed. Please try again.",
-            courses: [
-                "Research Methods", "Topics of Artificial Intelligence and Prospective Information Technology",
-                "Seminar of Business Administration and Information Technology Innovation", "Business Management Analytics",
-                "Advanced Big Data Analytics and Modeling", "Digital Marketing", "Co-opetitive Dynamics and Platform Strategy",
-                "Green Finance", "Environmental, Social, and Governance (ESG) Principles for Sustainable Businesses",
-                "Global Industry Competitive Analysis", "Seminar on Econometrics", "Econometrics I",
-                "Empirical Research Methods of Finance", "Financial Management", "Python for Finance",
-                "Strategic Management of Multinational Corporations", "Modern Organization Management",
-                "Organization Behavior and Theory", "Industry Trends and Business Models", "Management",
-                "World Economics and Politics", "Tourism Marketing", "Design Thinking", "Programming and Computer System",
-                "Seminars on Organizational Behavior", "Industrial Economics", "Advanced operations research",
-                "Investment Management", "Business News and Analysis", "Economic and Finance Empirical Data Analysis",
-                "Advanced Organization Theory"
-            ]
-        },
-        // --- ADMISSION PAGE ---
-        admission: {
-            title: "Admission Information",
-            steps_title: "Application Process: Step-by-Step",
-            checklist_title: "Required Application Checklist",
-            step1: "Prepare Documents",
-            step2: "Graduation & Fees",
-            step3: "Contact & Apply",
-            docs: [
-                "The application form (including scholarship application)", "Photo copy of a valid passport or certificate of nationality",
-                "One copy of the highest-level diploma", "One copy of the transcript of the highest degree earned",
-                "An autobiography", "Statement of Undertaking", "One study plan",
-                "One copy of a financial statement", "Language proficiency test certificate",
-                "Complete undergraduate transcripts", "Proof of English proficiency (Equivalent to or higher than CEFR B1 level, but not required for applicants from English-speaking countries)",
-                "Any other work that may facilitate the review of the application (e.g. Letters of recommendation)"
-            ],
-            grad_title: "Graduation Requirements (Master's)",
-            grad_reqs: [
-                "30 credits (9 credits of required courses + 21 credits of elective courses)",
-                "Finish writing master’s thesis (in English) and pass the master’s degree oral defense examination"
-            ],
-            fees_title: "Estimated Fees and Living Expenses",
-            fees_details: {
-                living: "Living Expenses: about NT$6,000-NT$10,000 per month",
-                health: "International Student Medical Insurance: NT$ 4,956 per semester",
-                life: "Life Insurance: NT$325 per semester",
-                dorm: "Alternative Accommodation – Graduate Dormitory (Twin Room): About NT$ 11,600 per semester",
-                deposit: "Security Deposit: NT$ 2,000 (refundable)"
-            },
-            contact_title: "Contact & Office Hours",
-            contact_email: "Email:",
-            contact_phone: "Phone:",
-            contact_hours: "Office Hours:",
-            contact_hours_detail: "Monday – Friday, 8:30 AM – 5:00 PM (Taiwan Time)",
-            apply_cta: "Official Application Portal (NCNU)",
-        },
-        // --- FOOTER ---
-        footer: {
-            address: "NCNU Address:",
-            address_detail: "No. 1, University Rd., Puli Township, Nantou County 545, Taiwan (R.O.C.)",
-            contact: "BAITIA Contact:",
-            contact_email: "baitia@ncnu.edu.tw",
-            copyright: "© 2025 Next Horizon. All rights reserved."
-        },
-        // --- ACCESSIBILITY/SEO ---
-        meta: {
-            title: "Next Horizon: Business Management & IT Innovation - NCNU BAITIA Master's Program",
-            description: "NCNU BAITIA Master's program focusing on Business Management, IT, and Innovation. View curriculum, admission steps, and apply now.",
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Next Horizon: Business Management & IT Innovation - NCNU BAITIA Master's Program</title>
+    <meta name="description" content="NCNU BAITIA Master's program focusing on Business Management, IT, and Innovation. View curriculum, admission steps, and apply now.">
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Custom NCNU Theme Colors -->
+    <style>
+        :root {
+            /* Primary/Main theme color: Dark Navy/Contrast (#0C4A6E) */
+            --color-ncnu-blue: 12 74 110;  
+            /* Accent/Highlight color: Vibrant Sky Blue (#00BFFF) */
+            --color-ncnu-gold: 0 191 255;  
         }
-    },
-    'zh-tw': {
-        site: {
-            title: "新視界：企業管理與資訊科技創新",
-            subline: "國立暨南國際大學 (NCNU)",
-            department: "企業管理與創新科技應用學系 (BAITIA)",
-            department_short: "企管系"
-        },
-        nav: {
-            home: "首頁",
-            curriculum: "課程規劃",
-            admission: "招生資訊",
-            other_depts: "其他學系"
-        },
-        lang: {
-            en: "EN",
-            zh_tw: "繁中",
-            toggle_aria: "切換語言"
-        },
-        // --- HOME PAGE [TBD — LOCALIZE] ---
-        hero: {
-            // UPDATED: Swap hero title
-            title: "企業管理與資訊科技創新與應用",
-            subtitle: "暨大企管系碩士學程 — 匯集五大管理領域專家，培養塑造全球商業格局的頂尖人才。",
-            alt_text: "國立暨南國際大學校園景色，綠色山脈和湖泊倒影在夕陽下。"
-        },
-        cta: {
-            apply: "立即申請",
-            curriculum: "查看課程",
-            contact: "聯絡我們",
-            program_link: "學程詳細資訊",
-            curriculum_link: "完整課程指南",
-            admission_link: "申請步驟"
-        },
-        panel: {
-            program_overview: "學程特色與介紹",
-            program_desc: "發掘我們結合核心商業策略與尖端IT及創新應用的雙重點教學方法。",
-            curriculum_snapshot: "課程概覽",
-            curriculum_desc: "查看為滿足未來產業需求而設計的專業課程清單。",
-            connect: "聯繫企管系",
-            connect_desc: "查看申請步驟、費用和所需文件，開啟您的旅程。",
-        },
-        // --- CURRICULUM PAGE [TBD — LOCALIZE] ---
-        curriculum: {
-            title: "課程規劃",
-            link_desc: "有關完整和最新的課程詳細資訊，請訪問企管系官方規劃頁面：",
-            course_title: "核心與選修課程概覽",
-            explain_cta: "課程解說 ✨",
-            explain_loading: "正在生成解說...",
-            explain_error: "抱歉，解說服務失敗。請重試。",
-            courses: [
-                "研究方法", "人工智慧與前瞻資訊科技專題",
-                "企業管理與資訊科技創新研討", "企業管理分析",
-                "高階大數據分析與建模", "數位行銷", "競合動態與平台策略",
-                "綠色金融", "永續企業的環境、社會與治理 (ESG) 原則",
-                "全球產業競爭分析", "計量經濟學研討", "計量經濟學(一)",
-                "財務實證研究方法", "財務管理", "Python與財務應用",
-                "跨國公司策略管理", "現代組織管理",
-                "組織行為與理論", "產業趨勢與商業模式", "管理學",
-                "世界經濟與政治", "觀光行銷", "設計思考", "程式設計與電腦系統",
-                "組織行為學研討", "產業經濟學", "高等作業研究",
-                "投資管理", "商業新聞與分析", "經濟與金融實證資料分析",
-                "高等組織理論"
-            ]
-        },
-        // --- ADMISSION PAGE [TBD — LOCALIZE] ---
-        admission: {
-            title: "招生資訊",
-            steps_title: "申請流程：循序漸進",
-            checklist_title: "所需申請文件清單",
-            step1: "準備文件",
-            step2: "畢業要求與費用",
-            step3: "聯絡方式與申請",
-            docs: [
-                "申請表（含獎學金申請）", "有效護照或國籍證明影本",
-                "最高學歷畢業證書影本", "最高學歷成績單影本",
-                "自傳", "承諾書", "一份研究計畫",
-                "一份財力證明", "語言能力檢定證書",
-                "完整大學部成績單", "英語能力證明（相當於或高於 CEFR B1 等級，英語系國家申請者不須提供）",
-                "其他有助於審核的資料（例如：推薦信）"
-            ],
-            grad_title: "畢業要求 (碩士班)",
-            grad_reqs: [
-                "30學分（9學分必修課程 + 21學分選修課程）",
-                "完成碩士論文寫作（英文撰寫）並通過碩士學位口試"
-            ],
-            fees_title: "預估費用與生活開支",
-            fees_details: {
-                living: "生活費：每月約 NT$6,000-NT$10,000",
-                health: "國際學生醫療保險：每學期 NT$ 4,956",
-                life: "人壽保險：每學期 NT$325",
-                dorm: "替代住宿 – 研究生宿舍（雙人房）：每學期約 NT$ 11,600",
-                deposit: "保證金：NT$ 2,000 (可退還)"
-            },
-            contact_title: "聯絡方式與辦公時間",
-            contact_email: "電子郵件:",
-            contact_phone: "電話:",
-            contact_hours: "辦公時間:",
-            contact_hours_detail: "週一至週五, 上午 8:30 – 下午 5:00 (台灣時間)",
-            apply_cta: "官方申請入口 (NCNU)",
-        },
-        // --- FOOTER [TBD — LOCALIZE] ---
-        footer: {
-            address: "暨大地址:",
-            address_detail: "545 臺灣南投縣埔里鎮大學路1號",
-            contact: "企管系聯絡:",
-            contact_email: "baitia@ncnu.edu.tw",
-            copyright: "© 2025 新視界. 版權所有。"
-        },
-        // --- ACCESSIBILITY/SEO [TBD — LOCALIZE] ---
-        meta: {
-            title: "新視界：企業管理與資訊科技創新 - 暨大企管系碩士學程",
-            description: "暨大企管系碩士學程專注於企業管理、IT與創新。查看課程、申請步驟，並立即申請。",
+        .bg-ncnu-blue { background-color: rgb(var(--color-ncnu-blue)); }
+        .text-ncnu-blue { color: rgb(var(--color-ncnu-blue)); }
+        .border-ncnu-blue { border-color: rgb(var(--color-ncnu-blue)); }
+        .bg-ncnu-gold { background-color: rgb(var(--color-ncnu-gold)); }
+        .text-ncnu-gold { color: rgb(var(--color-ncnu-gold)); }
+        .border-ncnu-gold { border-color: rgb(var(--color-ncnu-gold)); }
+        /* Global Font Setting */
+        body { 
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif; 
+            scroll-behavior: smooth;
         }
-    }
-};
-
-// --- API CONFIGURATION & UTILITIES ---
-
-const apiKey = ""; 
-const apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent";
-
-const useTranslation = (lang) => (key) => {
-    const keys = key.split('.');
-    let current = I18N_DATA[lang];
-    for (const k of keys) {
-        if (!current || !current[k]) return key;
-        current = current[k];
-    }
-    return current;
-};
-
-/**
- * Executes a POST request to the Gemini API with exponential backoff for resilience.
- */
-const generateContentWithBackoff = async (payload) => {
-    const MAX_RETRIES = 5;
-    const BASE_DELAY_MS = 1000;
-    
-    const finalApiUrl = `${apiUrl}?key=${apiKey}`;
-
-    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-        try {
-            const response = await fetch(finalApiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            if (response.ok) {
-                const result = await response.json();
-                const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
-                if (text) return text.trim();
-                throw new Error("Invalid response structure from API.");
-            } else if (response.status === 429 || response.status >= 500) {
-                if (attempt === MAX_RETRIES - 1) {
-                    throw new Error(`API failed after ${MAX_RETRIES} attempts with status: ${response.status}`);
-                }
-                const delay = BASE_DELAY_MS * Math.pow(2, attempt) + Math.random() * 500;
-                await new Promise(resolve => setTimeout(resolve, delay));
-            } else {
-                const errorBody = await response.text();
-                throw new Error(`Non-retryable API error: ${response.status} - ${errorBody}`);
-            }
-        } catch (error) {
-            if (attempt === MAX_RETRIES - 1) {
-                console.error("Fatal API error:", error);
-                throw new Error("Could not reach the LLM service.");
-            }
-            const delay = BASE_DELAY_MS * Math.pow(2, attempt) + Math.random() * 500;
-            await new Promise(resolve => setTimeout(resolve, delay));
+        .motion-safe\:animate-fadeIn {
+            animation: fadeIn 0.5s ease-out forwards;
+            opacity: 0;
         }
-    }
-};
-
-// --- UTILITY COMPONENTS ---
-
-const LanguageToggle = React.memo(({ lang, setLang }) => {
-    const t = useTranslation(lang);
-    const toggleLang = () => setLang(lang === 'en' ? 'zh-tw' : 'en');
-    const displayLang = lang === 'en' ? t('lang.zh_tw') : t('lang.en');
-
-    return (
-        <button
-            onClick={toggleLang}
-            aria-label={t('lang.toggle_aria')}
-            className="flex items-center space-x-2 p-2 rounded-full text-white bg-ncnu-gold hover:bg-sky-400 transition duration-300 shadow-md ring-2 ring-ncnu-blue/30 transform active:scale-95"
-            title={t('lang.toggle_aria')}
-        >
-            <Globe size={18} />
-            <span className="font-semibold text-sm">{displayLang}</span>
-        </button>
-    );
-});
-
-const CTAButton = ({ text, url, primary = true, onClick }) => {
-    const baseClasses = "px-8 py-3 text-center text-lg font-bold rounded-xl shadow-lg transition duration-300 transform active:scale-95 whitespace-nowrap focus:outline-none focus:ring-4";
-    const primaryClasses = "bg-ncnu-gold text-ncnu-blue hover:bg-sky-400 hover:shadow-xl focus:ring-ncnu-gold/50";
-    const secondaryClasses = "bg-white text-ncnu-blue border-2 border-ncnu-blue hover:bg-ncnu-blue/10 hover:shadow-lg focus:ring-ncnu-blue/50";
-
-    const content = (
-        <a
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={onClick}
-            className={`${baseClasses} ${primary ? primaryClasses : secondaryClasses}`}
-        >
-            {text}
-        </a>
-    );
-
-    // If no URL is provided (url is null/undefined) or it's an internal-only click, render as a button
-    if (!url || url === '#') {
-        // If it's a link to '#' but has an onClick, we treat it as a button to prevent default link behavior.
-        if (onClick && url === '#') {
-            return (
-                <button
-                    onClick={(e) => {
-                        e.preventDefault(); // Prevent default if it's rendered as an anchor with '#' but intended as a button
-                        onClick(e);
-                    }}
-                    className={`${baseClasses} ${primary ? primaryClasses : secondaryClasses}`}
-                >
-                    {text}
-                </button>
-            );
+        @keyframes fadeIn {
+            to { opacity: 1; }
         }
-        
-        // If no URL is provided at all, render as a standard button
-        if (!url) {
-            return (
-                <button
-                    onClick={onClick}
-                    className={`${baseClasses} ${primary ? primaryClasses : secondaryClasses}`}
-                >
-                    {text}
-                </button>
-            );
-        }
-    }
-    return content;
-};
-
-
-// --- MAIN LAYOUT COMPONENTS ---
-
-// 1. Header with Dropdown
-const Header = ({ lang, setLang, currentPage, setCurrentPage }) => {
-    const t = useTranslation(lang);
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-
-    const navItems = useMemo(() => ([
-        { name: t('nav.home'), page: 'Home', url: STATIC_LINKS.baitia_home },
-        { name: t('nav.curriculum'), page: 'Curriculum', url: STATIC_LINKS.curriculum_planning, hasDropdown: true },
-        { name: t('nav.admission'), page: 'Admission', url: '#' },
-    ]), [t]);
-
-    // Handles both page navigation and URL linking (Home)
-    const handleNavClick = (e, page, url) => {
-        if (page === 'Home' || url === STATIC_LINKS.baitia_home) {
-            return; // Allow the default link behavior for the Home link
-        }
-        e.preventDefault();
-        setCurrentPage(page);
-        setIsMenuOpen(false);
-        setIsDropdownOpen(false);
-    };
-
-    const NavLink = ({ item, isMobile = false }) => (
-        <div className="relative" onMouseEnter={() => item.hasDropdown && !isMobile && setIsDropdownOpen(true)} onMouseLeave={() => item.hasDropdown && !isMobile && setIsDropdownOpen(false)}>
-            <a
-                href={item.url}
-                onClick={(e) => {
-                    if (item.hasDropdown) {
-                        // For curriculum, allow the link to navigate while toggling the dropdown
-                        e.preventDefault();
-                        setIsDropdownOpen(!isDropdownOpen);
-                        setCurrentPage(item.page);
-                        setIsMenuOpen(false);
-                    } else {
-                        handleNavClick(e, item.page, item.url);
-                    }
-                }}
-                className={`flex items-center justify-between lg:justify-start px-4 py-2 text-lg font-medium rounded-lg transition duration-200
-                    ${currentPage === item.page
-                        ? 'bg-ncnu-gold text-ncnu-blue lg:bg-ncnu-gold/20'
-                        : 'text-gray-700 hover:bg-gray-200 hover:text-ncnu-blue'
-                    } ${isMobile ? 'w-full' : ''}`}
-                aria-current={currentPage === item.page ? 'page' : undefined}
-                aria-haspopup={item.hasDropdown ? "true" : undefined}
-                aria-expanded={item.hasDropdown ? isDropdownOpen : undefined}
-                tabIndex="0"
-            >
-                <span>{item.name}</span>
-                {item.hasDropdown && <ChevronDown size={16} className={`ml-1 transition-transform ${isDropdownOpen ? 'transform rotate-180' : ''}`} />}
-            </a>
-            {item.hasDropdown && (isDropdownOpen || isMobile) && (
-                <CurriculumDropdown lang={lang} isMobile={isMobile} setIsMenuOpen={setIsMenuOpen} />
-            )}
+        /* Style for Lucide icons */
+        .lucide { display: inline-block; vertical-align: middle; }
+    </style>
+</head>
+<body class="font-inter antialiased bg-gray-50">
+    <div id="app" class="min-h-screen flex flex-col">
+        <!-- Application content will be injected here by JavaScript -->
+        <div class="text-center p-12">
+            <svg class="animate-spin h-8 w-8 text-ncnu-blue mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p class="text-ncnu-blue font-semibold">Loading Application...</p>
         </div>
-    );
-    
-    // Dropdown for the Curriculum page links
-    const CurriculumDropdown = ({ lang, isMobile, setIsMenuOpen }) => {
-        const departmentLinks = STATIC_LINKS.curriculum_departments.map(dept => ({
-            name: lang === 'en' ? dept.name_en : dept.name_zh,
-            url: dept.url,
-        }));
-        const t = useTranslation(lang);
+    </div>
 
-        return (
-            <div
-                className={`bg-white shadow-xl rounded-lg border-t-4 border-ncnu-gold ${isMobile ? 'mt-2 p-2 space-y-1' : 'absolute mt-2 w-72 p-2 space-y-1 z-50'}`}
-                role="menu"
-                aria-orientation="vertical"
-            >
-                <h4 className="text-sm font-bold text-ncnu-blue px-2 pt-1">{t('nav.other_depts')}</h4>
-                <div className="h-0.5 bg-gray-100 mb-1"></div>
-                {departmentLinks.map((link, index) => (
-                    <a
-                        key={index}
-                        href={link.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block px-3 py-2 text-sm text-gray-700 rounded-md hover:bg-ncnu-gold/20 hover:text-ncnu-blue transition duration-150"
-                        onClick={() => setIsMenuOpen(false)}
-                        role="menuitem"
-                        tabIndex="-1"
+    <script>
+        // --- API CONFIGURATION ---
+        const apiKey = ""; 
+        const apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent";
+
+        // --- UTILITY FUNCTIONS ---
+
+        /**
+         * Translation utility function.
+         */
+        function t(key) {
+            const keys = key.split('.');
+            let current = I18N_DATA[window.appState.lang];
+            for (const k of keys) {
+                if (!current || !current[k]) return key;
+                current = current[k];
+            }
+            return current;
+        };
+
+        /**
+         * Simple state management wrapper to trigger a re-render.
+         */
+        function updateState(newState = {}) {
+            // Simple state update and re-render mechanism
+            Object.assign(window.appState, newState);
+            renderApp();
+        };
+
+        /**
+         * Executes a POST request to the Gemini API with exponential backoff for resilience.
+         */
+        async function generateContentWithBackoff(payload) {
+            const MAX_RETRIES = 5;
+            const BASE_DELAY_MS = 1000;
+            
+            const finalApiUrl = `${apiUrl}?key=${apiKey}`;
+
+            for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+                try {
+                    const response = await fetch(finalApiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (response.ok) {
+                        const result = await response.json();
+                        const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+                        if (text) return text.trim();
+                        throw new Error("Invalid response structure from API.");
+                    } else if (response.status === 429 || response.status >= 500) {
+                        if (attempt === MAX_RETRIES - 1) {
+                            throw new Error(`API failed after ${MAX_RETRIES} attempts with status: ${response.status}`);
+                        }
+                        const delay = BASE_DELAY_MS * Math.pow(2, attempt) + Math.random() * 500;
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                    } else {
+                        const errorBody = await response.text();
+                        throw new Error(`Non-retryable API error: ${response.status} - ${errorBody}`);
+                    }
+                } catch (error) {
+                    if (attempt === MAX_RETRIES - 1) {
+                        console.error("Fatal API error:", error);
+                        throw new Error("Could not reach the LLM service.");
+                    }
+                    const delay = BASE_DELAY_MS * Math.pow(2, attempt) + Math.random() * 500;
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+            }
+        };
+
+        /**
+         * Handles calling the Gemini API to explain a course.
+         */
+        async function handleExplainCourse(courseName) {
+            const currentState = window.appState;
+            if (currentState.loadingCourse === courseName) return;
+            
+            // Set loading state and initial message
+            window.appState.explanations[courseName] = t('curriculum.explain_loading');
+            updateState({ loadingCourse: courseName });
+            
+            const currentLang = window.appState.lang;
+
+            const SYSTEM_PROMPT = currentLang === 'en'
+                ? "You are a helpful and concise academic advisor for a Master's program in Business Management and IT Innovation. Your task is to explain how a specific course relates to the convergence of business strategy, technology, and innovation. Respond only with a single, clear, one-sentence explanation."
+                : "您是企業管理與資訊科技創新碩士學程的有用且簡潔的學術顧問。您的任務是解釋特定課程如何與商業策略、技術和創新的融合相關。僅用一個清晰的句子回答。";
+
+            const userQuery = currentLang === 'en' 
+                ? `Explain the course: ${courseName}`
+                : `請解釋課程：${courseName}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+            };
+
+            try {
+                const result = await generateContentWithBackoff(payload);
+                window.appState.explanations[courseName] = result;
+            } catch (e) {
+                console.error(e);
+                window.appState.explanations[courseName] = t('curriculum.explain_error');
+            } finally {
+                updateState({ loadingCourse: null }); // Final re-render
+            }
+        };
+
+
+        // --- CONFIGURATION: LINKS & TRANSLATIONS (Moved after core utilities) ---
+
+        const STATIC_LINKS = {
+            ncnu: "https://www.ncnu.edu.tw",
+            baitia_home: "https://baitia.ncnu.edu.tw/p/404-1084-24750.php?Lang=en",
+            curriculum_planning: "https://baitia.ncnu.edu.tw/p/404-1084-24760.php?Lang=en",
+            apply_now: "https://exam.ncnu.edu.tw/114FApply.html",
+            logo: "https://service.ncnu.edu.tw/ncnuweb/units/share/%E5%85%A8%E6%A0%A1%E5%85%B1%E7%94%A8/web_material/images/logo/ps/NCNU_logo%E5%9C%96%E8%88%87%E5%BA%95%E6%96%87%E5%AD%97.jpg",
+            social: {
+                facebook: "https://www.facebook.com/baitiancnu/?rdid=ZQtesH4eDDf9BTsy",
+                instagram: "https://www.instagram.com/ncnu_baitia/?igsh=d2F6cWpudmU5M3Jp&utm_source=qr#",
+                youtube: "https://www.youtube.com/channel/UCfW7jAUBy-yxZCxlsxe5ERg",
+            },
+            curriculum_departments: [
+                { name_en: "International Studies", name_zh: "國際關係學系", url: "https://baitia.ncnu.edu.tw/p/403-1084-1146.php?Lang=en" },
+                { name_en: "Banking and Finance", name_zh: "財務金融學系", url: "https://baitia.ncnu.edu.tw/p/403-1084-1148.php?Lang=en" },
+                { name_en: "Economics", name_zh: "經濟學系", url: "https://baitia.ncnu.edu.tw/p/403-1084-1145.php?Lang=en" },
+                { name_en: "Information Management", name_zh: "資訊管理學系", url: "https://baitia.ncnu.edu.tw/p/403-1084-1147.php?Lang=en" },
+                { name_en: "Tourism", name_zh: "觀光休閒與餐旅管理學系", url: "https://baitia.ncnu.edu.tw/p/403-1084-1149.php?Lang=en" },
+                { name_en: "Computer Science", name_zh: "資訊工程學系", url: "https://baitia.ncnu.edu.tw/p/403-1084-1151.php?Lang=en" },
+            ]
+        };
+
+        const I18N_DATA = {
+            'en': {
+                site: {
+                    title: "Next Horizon: Business Management & IT Innovation",
+                    subline: "National Chi Nan University (NCNU)",
+                    department: "Department of Business Administration and Innovation Technology Innovation and Application (BAITIA)",
+                    department_short: "BAITIA"
+                },
+                nav: {
+                    home: "Home",
+                    curriculum: "Curriculum Planning",
+                    admission: "Admission",
+                    other_depts: "Other Departments"
+                },
+                lang: {
+                    en: "EN",
+                    zh_tw: "繁中",
+                    toggle_aria: "Switch Language"
+                },
+                hero: {
+                    title: "Business Administration and Information Technology Innovation and Application",
+                    subtitle: "A Master's program at NCNU's BAITIA — Learn from experts in five management disciplines shaping the global business landscape.",
+                    alt_text: "National Chi Nan University campus vista with green mountains and reflective lake at sunset."
+                },
+                cta: {
+                    apply: "Apply Now",
+                    curriculum: "View Curriculum",
+                    contact: "Contact Us",
+                    program_link: "Program Details",
+                    curriculum_link: "Full Curriculum Guide",
+                    admission_link: "Application Steps"
+                },
+                panel: {
+                    program_overview: "Program Overview & Features",
+                    program_desc: "Discover our dual-focus approach combining core business strategy with cutting-edge IT and innovation applications.",
+                    curriculum_snapshot: "Curriculum Snapshot",
+                    curriculum_desc: "See a detailed list of our specialized courses designed to meet future industry demands.",
+                    connect: "Connect with BAITIA",
+                    connect_desc: "View application steps, tuition fees, and required documents to begin your journey.",
+                },
+                curriculum: {
+                    title: "Curriculum Planning",
+                    link_desc: "For the complete and latest curriculum details, please visit the official BAITIA planning page:",
+                    course_title: "Core and Elective Courses Snapshot",
+                    explain_cta: "Course Explainer ✨",
+                    explain_loading: "Generating explanation...",
+                    explain_error: "Sorry, the explainer service failed. Please try again.",
+                    courses: [
+                        "Research Methods", "Topics of Artificial Intelligence and Prospective Information Technology",
+                        "Seminar of Business Administration and Information Technology Innovation", "Business Management Analytics",
+                        "Advanced Big Data Analytics and Modeling", "Digital Marketing", "Co-opetitive Dynamics and Platform Strategy",
+                        "Green Finance", "Environmental, Social, and Governance (ESG) Principles for Sustainable Businesses",
+                        "Global Industry Competitive Analysis", "Seminar on Econometrics", "Econometrics I",
+                        "Empirical Research Methods of Finance", "Financial Management", "Python for Finance",
+                        "Strategic Management of Multinational Corporations", "Modern Organization Management",
+                        "Organization Behavior and Theory", "Industry Trends and Business Models", "Management",
+                        "World Economics and Politics", "Tourism Marketing", "Design Thinking", "Programming and Computer System",
+                        "Seminars on Organizational Behavior", "Industrial Economics", "Advanced operations research",
+                        "Investment Management", "Business News and Analysis", "Economic and Finance Empirical Data Analysis",
+                        "Advanced Organization Theory"
+                    ]
+                },
+                admission: {
+                    title: "Admission Information",
+                    steps_title: "Application Process: Step-by-Step",
+                    checklist_title: "Required Application Checklist",
+                    step1: "Prepare Documents",
+                    step2: "Graduation & Fees",
+                    step3: "Contact & Apply",
+                    docs: [
+                        "The application form (including scholarship application)", "Photo copy of a valid passport or certificate of nationality",
+                        "One copy of the highest-level diploma", "One copy of the transcript of the highest degree earned",
+                        "An autobiography", "Statement of Undertaking", "One study plan",
+                        "One copy of a financial statement", "Language proficiency test certificate",
+                        "Complete undergraduate transcripts", "Proof of English proficiency (Equivalent to or higher than CEFR B1 level, but not required for applicants from English-speaking countries)",
+                        "Any other work that may facilitate the review of the application (e.g. Letters of recommendation)"
+                    ],
+                    grad_title: "Graduation Requirements (Master's)",
+                    grad_reqs: [
+                        "30 credits (9 credits of required courses + 21 credits of elective courses)",
+                        "Finish writing master’s thesis (in English) and pass the master’s degree oral defense examination"
+                    ],
+                    fees_title: "Estimated Fees and Living Expenses",
+                    fees_details: {
+                        living: "Living Expenses: about NT$6,000-NT$10,000 per month",
+                        health: "International Student Medical Insurance: NT$ 4,956 per semester",
+                        life: "Life Insurance: NT$325 per semester",
+                        dorm: "Alternative Accommodation – Graduate Dormitory (Twin Room): About NT$ 11,600 per semester",
+                        deposit: "Security Deposit: NT$ 2,000 (refundable)"
+                    },
+                    contact_title: "Contact & Office Hours",
+                    contact_email: "Email:",
+                    contact_phone: "Phone:",
+                    contact_hours: "Office Hours:",
+                    contact_hours_detail: "Monday – Friday, 8:30 AM – 5:00 PM (Taiwan Time)",
+                    apply_cta: "Official Application Portal (NCNU)",
+                },
+                footer: {
+                    address: "NCNU Address:",
+                    address_detail: "No. 1, University Rd., Puli Township, Nantou County 545, Taiwan (R.O.C.)",
+                    contact: "BAITIA Contact:",
+                    contact_email: "baitia@ncnu.edu.tw",
+                    copyright: "© 2025 Next Horizon. All rights reserved."
+                },
+                meta: {
+                    title: "Next Horizon: Business Management & IT Innovation - NCNU BAITIA Master's Program",
+                    description: "NCNU BAITIA Master's program focusing on Business Management, IT, and Innovation. View curriculum, admission steps, and apply now.",
+                }
+            },
+            'zh-tw': {
+                site: {
+                    title: "新視界：企業管理與資訊科技創新",
+                    subline: "國立暨南國際大學 (NCNU)",
+                    department: "企業管理與創新科技應用學系 (BAITIA)",
+                    department_short: "企管系"
+                },
+                nav: {
+                    home: "首頁",
+                    curriculum: "課程規劃",
+                    admission: "招生資訊",
+                    other_depts: "其他學系"
+                },
+                lang: {
+                    en: "EN",
+                    zh_tw: "繁中",
+                    toggle_aria: "切換語言"
+                },
+                hero: {
+                    title: "企業管理與資訊科技創新與應用",
+                    subtitle: "暨大企管系碩士學程 — 匯集五大管理領域專家，培養塑造全球商業格局的頂尖人才。",
+                    alt_text: "國立暨南國際大學校園景色，綠色山脈和湖泊倒影在夕陽下。"
+                },
+                cta: {
+                    apply: "立即申請",
+                    curriculum: "查看課程",
+                    contact: "聯絡我們",
+                    program_link: "學程詳細資訊",
+                    curriculum_link: "完整課程指南",
+                    admission_link: "申請步驟"
+                },
+                panel: {
+                    program_overview: "學程特色與介紹",
+                    program_desc: "發掘我們結合核心商業策略與尖端IT及創新應用的雙重點教學方法。",
+                    curriculum_snapshot: "課程概覽",
+                    curriculum_desc: "查看為滿足未來產業需求而設計的專業課程清單。",
+                    connect: "聯繫企管系",
+                    connect_desc: "查看申請步驟、費用和所需文件，開啟您的旅程。",
+                },
+                curriculum: {
+                    title: "課程規劃",
+                    link_desc: "有關完整和最新的課程詳細資訊，請訪問企管系官方規劃頁面：",
+                    course_title: "核心與選修課程概覽",
+                    explain_cta: "課程解說 ✨",
+                    explain_loading: "正在生成解說...",
+                    explain_error: "抱歉，解說服務失敗。請重試。",
+                    courses: [
+                        "研究方法", "人工智慧與前瞻資訊科技專題",
+                        "Seminar of Business Administration and Information Technology Innovation", "企業管理分析",
+                        "高階大數據分析與建模", "數位行銷", "競合動態與平台策略",
+                        "綠色金融", "永續企業的環境、社會與治理 (ESG) 原則",
+                        "全球產業競爭分析", "計量經濟學研討", "計量經濟學(一)",
+                        "財務實證研究方法", "財務管理", "Python與財務應用",
+                        "跨國公司策略管理", "現代組織管理",
+                        "組織行為與理論", "產業趨勢與商業模式", "管理學",
+                        "世界經濟與政治", "觀光行銷", "設計思考", "程式設計與電腦系統",
+                        "組織行為學研討", "產業經濟學", "高等作業研究",
+                        "投資管理", "商業新聞與分析", "經濟與金融實證資料分析",
+                        "高等組織理論"
+                    ]
+                },
+                admission: {
+                    title: "招生資訊",
+                    steps_title: "申請流程：循序漸進",
+                    checklist_title: "所需申請文件清單",
+                    step1: "準備文件",
+                    step2: "畢業要求與費用",
+                    step3: "聯絡方式與申請",
+                    docs: [
+                        "申請表（含獎學金申請）", "有效護照或國籍證明影本",
+                        "最高學歷畢業證書影本", "最高學歷成績單影本",
+                        "自傳", "承諾書", "一份研究計畫",
+                        "一份財力證明", "語言能力檢定證書",
+                        "完整大學部成績單", "英語能力證明（相當於或高於 CEFR B1 等級，英語系國家申請者不須提供）",
+                        "其他有助於審核的資料（例如：推薦信）"
+                    ],
+                    grad_title: "畢業要求 (碩士班)",
+                    grad_reqs: [
+                        "30 credits (9 credits of required courses + 21 credits of elective courses)",
+                        "Finish writing master’s thesis (in English) and pass the master’s degree oral defense examination"
+                    ],
+                    fees_title: "預估費用與生活開支",
+                    fees_details: {
+                        living: "生活費：每月約 NT$6,000-NT$10,000",
+                        health: "國際學生醫療保險：每學期 NT$ 4,956",
+                        life: "人壽保險：每學期 NT$325",
+                        dorm: "替代住宿 – 研究生宿舍（雙人房）：每學期約 NT$ 11,600",
+                        deposit: "保證金：NT$ 2,000 (可退還)"
+                    },
+                    contact_title: "聯絡方式與辦公時間",
+                    contact_email: "電子郵件:",
+                    contact_phone: "電話:",
+                    contact_hours: "辦公時間:",
+                    contact_hours_detail: "週一至週五, 上午 8:30 – 下午 5:00 (台灣時間)",
+                    apply_cta: "官方申請入口 (NCNU)",
+                },
+                footer: {
+                    address: "暨大地址:",
+                    address_detail: "545 臺灣南投縣埔里鎮大學路1號",
+                    contact: "企管系聯絡:",
+                    contact_email: "baitia@ncnu.edu.tw",
+                    copyright: "© 2025 新視界. 版權所有。"
+                },
+                meta: {
+                    title: "新視界：企業管理與資訊科技創新 - 暨大企管系碩士學程",
+                    description: "暨大企管系碩士學程專注於企業管理、IT與創新。查看課程、申請步驟，並立即申請。",
+                }
+            }
+        };
+
+
+        // --- COMPONENT RENDERERS ---
+
+        function renderIcon(name, classes = 'w-6 h-6', stroke = 2) {
+            // FIX: Instead of calling a non-existent `toSvg` method,
+            // we generate the specific HTML tag structure that the Lucide global script
+            // is designed to find and replace with the SVG content *after* the DOM renders.
+            return `<i data-lucide="${name}" class="${classes}" data-stroke-width="${stroke}"></i>`;
+        };
+
+        function renderLanguageToggle() {
+            const currentLang = window.appState.lang;
+            const displayLang = currentLang === 'en' ? t('lang.zh_tw') : t('lang.en');
+            const toggleLang = () => {
+                const newLang = currentLang === 'en' ? 'zh-tw' : 'en';
+                localStorage.setItem('appLang', newLang);
+                updateState({ lang: newLang });
+            };
+
+            return `
+                <button id="lang-toggle" 
+                    onclick="(${toggleLang.toString()})()"
+                    aria-label="${t('lang.toggle_aria')}"
+                    class="flex items-center space-x-2 p-2 rounded-full text-white bg-ncnu-gold hover:bg-sky-400 transition duration-300 shadow-md ring-2 ring-ncnu-blue/30 transform active:scale-95"
+                    title="${t('lang.toggle_aria')}"
+                >
+                    ${renderIcon('Globe', 'w-4 h-4')}
+                    <span class="font-semibold text-sm">${displayLang}</span>
+                </button>
+            `;
+        };
+
+        function renderCTAButton(text, url, primary = true, pageToNavigate = null) {
+            const baseClasses = "px-8 py-3 text-center text-lg font-bold rounded-xl shadow-lg transition duration-300 transform active:scale-95 whitespace-nowrap focus:outline-none focus:ring-4";
+            const primaryClasses = "bg-ncnu-gold text-ncnu-blue hover:bg-sky-400 hover:shadow-xl focus:ring-ncnu-gold/50";
+            const secondaryClasses = "bg-white text-ncnu-blue border-2 border-ncnu-blue hover:bg-ncnu-blue/10 hover:shadow-lg focus:ring-ncnu-blue/50";
+            
+            if (pageToNavigate) {
+                return `
+                    <button 
+                        onclick="updateState({ currentPage: '${pageToNavigate}' })"
+                        class="${baseClasses} ${primary ? primaryClasses : secondaryClasses}"
                     >
-                        {link.name}
+                        ${text}
+                    </button>
+                `;
+            }
+
+            return `
+                <a
+                    href="${url}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="${baseClasses} ${primary ? primaryClasses : secondaryClasses}"
+                >
+                    ${text}
+                </a>
+            `;
+        };
+
+        function renderCurriculumDropdown(isMobile, closeMenuFn) {
+            const departmentLinks = STATIC_LINKS.curriculum_departments.map(dept => ({
+                name: window.appState.lang === 'en' ? dept.name_en : dept.name_zh,
+                url: dept.url,
+            }));
+            
+            const mobileClass = isMobile ? 'mt-2 p-2 space-y-1' : 'absolute mt-2 w-72 p-2 space-y-1 z-50';
+            const htmlLinks = departmentLinks.map(link => `
+                <a href="${link.url}" target="_blank" rel="noopener noreferrer"
+                    class="block px-3 py-2 text-sm text-gray-700 rounded-md hover:bg-ncnu-gold/20 hover:text-ncnu-blue transition duration-150"
+                    onclick="${closeMenuFn ? `document.getElementById('mobile-menu-btn').click()` : ''}"
+                    role="menuitem" tabIndex="-1">
+                    ${link.name}
+                </a>
+            `).join('');
+
+            return `
+                <div class="bg-white shadow-xl rounded-lg border-t-4 border-ncnu-gold ${mobileClass}" 
+                    role="menu" aria-orientation="vertical">
+                    <h4 class="text-sm font-bold text-ncnu-blue px-2 pt-1">${t('nav.other_depts')}</h4>
+                    <div class="h-0.5 bg-gray-100 mb-1"></div>
+                    ${htmlLinks}
+                </div>
+            `;
+        };
+
+        function renderHeader() {
+            const currentPage = window.appState.currentPage;
+            const isMenuOpen = window.appState.isMenuOpen;
+            const isDropdownOpen = window.appState.isDropdownOpen;
+
+            const navItems = [
+                { name: t('nav.home'), page: 'Home', url: STATIC_LINKS.baitia_home, isExternal: true },
+                { name: t('nav.curriculum'), page: 'Curriculum', url: '#', hasDropdown: true },
+                { name: t('nav.admission'), page: 'Admission', url: '#' },
+            ];
+
+            const renderNavLink = (item, isMobile = false) => {
+                const isActive = currentPage === item.page;
+                const linkClasses = `flex items-center justify-between lg:justify-start px-4 py-2 text-lg font-medium rounded-lg transition duration-200 ${isActive ? 'bg-ncnu-gold text-ncnu-blue lg:bg-ncnu-gold/20' : 'text-gray-700 hover:bg-gray-200 hover:text-ncnu-blue'} ${isMobile ? 'w-full' : ''}`;
+                
+                let clickAction = '';
+                if (item.isExternal) {
+                    clickAction = ``; // Allow default link behavior
+                } else if (item.hasDropdown) {
+                    clickAction = `updateState({ currentPage: '${item.page}', isDropdownOpen: !window.appState.isDropdownOpen, isMenuOpen: false })`;
+                } else {
+                    clickAction = `updateState({ currentPage: '${item.page}', isMenuOpen: false, isDropdownOpen: false })`;
+                }
+
+                let content = `
+                    <a href="${item.url}" 
+                        ${item.isExternal ? 'target="_blank" rel="noopener noreferrer"' : 'onclick="event.preventDefault(); ' + clickAction + '"'}
+                        class="${linkClasses}"
+                        aria-current="${isActive ? 'page' : 'false'}"
+                        aria-haspopup="${item.hasDropdown ? 'true' : 'false'}"
+                        aria-expanded="${item.hasDropdown ? isDropdownOpen : 'false'}"
+                        tabIndex="0"
+                    >
+                        <span>${item.name}</span>
+                        ${item.hasDropdown ? renderIcon('ChevronDown', `w-4 h-4 ml-1 transition-transform ${isDropdownOpen ? 'transform rotate-180' : ''}`, 3) : ''}
                     </a>
-                ))}
-            </div>
-        );
-    };
+                `;
 
+                if (item.hasDropdown && (isDropdownOpen && !isMobile)) {
+                    content += renderCurriculumDropdown(false, null);
+                }
 
-    return (
-        <header className="bg-white shadow-lg sticky top-0 z-40">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between items-center h-24">
-                    {/* Logo and Title */}
-                    <div className="flex-shrink-0 flex items-center space-x-3">
-                        <a href={STATIC_LINKS.baitia_home} target="_blank" rel="noopener noreferrer" className="focus:outline-none focus:ring-2 focus:ring-ncnu-gold rounded-full">
-                            <img className="h-12 w-auto rounded-full shadow-md" src={STATIC_LINKS.logo} alt={t('hero.alt_text')} onError={(e) => e.target.src = 'https://placehold.co/48x48/0C4A6E/00BFFF?text=N'} />
-                        </a>
-                        <div className="flex flex-col">
-                            <a href={STATIC_LINKS.baitia_home} target="_blank" rel="noopener noreferrer" className="text-xl sm:text-2xl font-extrabold text-ncnu-blue leading-tight hover:text-ncnu-gold transition duration-200">
-                                {t('site.title')}
-                            </a>
-                            <a href={STATIC_LINKS.ncnu} target="_blank" rel="noopener noreferrer" className="text-xs sm:text-sm text-gray-500 font-medium hover:text-ncnu-blue transition duration-200">
-                                {t('site.subline')}
-                            </a>
+                return `
+                    <div class="relative" 
+                        ${item.hasDropdown && !isMobile ? `onmouseenter="updateState({ isDropdownOpen: true })" onmouseleave="updateState({ isDropdownOpen: false })"` : ''}>
+                        ${content}
+                        ${item.hasDropdown && isMenuOpen && isMobile ? renderCurriculumDropdown(true, 'closeMenu') : ''}
+                    </div>
+                `;
+            };
+
+            const mobileNavItems = navItems.map(item => renderNavLink(item, true)).join('');
+            const desktopNavItems = navItems.map(item => renderNavLink(item, false)).join('');
+
+            return `
+                <header class="bg-white shadow-lg sticky top-0 z-40">
+                    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div class="flex justify-between items-center h-24">
+                            <!-- Logo and Title -->
+                            <div class="flex-shrink-0 flex items-center space-x-3">
+                                <a href="${STATIC_LINKS.baitia_home}" target="_blank" rel="noopener noreferrer" class="focus:outline-none focus:ring-2 focus:ring-ncnu-gold rounded-full">
+                                    <img class="h-12 w-auto rounded-full shadow-md" src="${STATIC_LINKS.logo}" alt="${t('hero.alt_text')}" onerror="this.src='https://placehold.co/48x48/0C4A6E/00BFFF?text=N'">
+                                </a>
+                                <div class="flex flex-col">
+                                    <a href="${STATIC_LINKS.baitia_home}" target="_blank" rel="noopener noreferrer" class="text-xl sm:text-2xl font-extrabold text-ncnu-blue leading-tight hover:text-ncnu-gold transition duration-200">
+                                        ${t('site.title')}
+                                    </a>
+                                    <a href="${STATIC_LINKS.ncnu}" target="_blank" rel="noopener noreferrer" class="text-xs sm:text-sm text-gray-500 font-medium hover:text-ncnu-blue transition duration-200">
+                                        ${t('site.subline')}
+                                    </a>
+                                </div>
+                            </div>
+
+                            <!-- Desktop Navigation and Controls -->
+                            <div class="hidden lg:flex items-center space-x-6">
+                                <nav class="flex space-x-2" aria-label="Main navigation">
+                                    ${desktopNavItems}
+                                </nav>
+                                ${renderLanguageToggle()}
+                            </div>
+
+                            <!-- Mobile Menu Button and Controls -->
+                            <div class="flex lg:hidden items-center space-x-3">
+                                ${renderLanguageToggle()}
+                                <button
+                                    id="mobile-menu-btn"
+                                    onclick="updateState({ isMenuOpen: !window.appState.isMenuOpen })"
+                                    class="inline-flex items-center justify-center p-2 rounded-md text-ncnu-blue hover:text-ncnu-gold focus:outline-none focus:ring-2 focus:ring-inset focus:ring-ncnu-gold transition duration-150"
+                                    aria-expanded="${isMenuOpen}"
+                                    aria-controls="mobile-menu"
+                                    aria-label="${isMenuOpen ? 'Close main menu' : 'Open main menu'}"
+                                >
+                                    ${isMenuOpen ? renderIcon('X', 'w-6 h-6') : renderIcon('Menu', 'w-6 h-6')}
+                                </button>
+                            </div>
                         </div>
                     </div>
 
-                    {/* Desktop Navigation and Controls */}
-                    <div className="hidden lg:flex items-center space-x-6">
-                        <nav className="flex space-x-2" aria-label="Main navigation">
-                            {navItems.map((item) => (
-                                <NavLink key={item.page} item={item} />
-                            ))}
-                        </nav>
-                        <LanguageToggle lang={lang} setLang={setLang} />
-                    </div>
-
-                    {/* Mobile Menu Button and Controls */}
-                    <div className="flex lg:hidden items-center space-x-3">
-                        <LanguageToggle lang={lang} setLang={setLang} />
-                        <button
-                            onClick={() => setIsMenuOpen(!isMenuOpen)}
-                            className="inline-flex items-center justify-center p-2 rounded-md text-ncnu-blue hover:text-ncnu-gold focus:outline-none focus:ring-2 focus:ring-inset focus:ring-ncnu-gold transition duration-150"
-                            aria-expanded={isMenuOpen}
-                            aria-controls="mobile-menu"
-                            aria-label={isMenuOpen ? "Close main menu" : "Open main menu"}
-                        >
-                            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            {/* Mobile Menu Panel */}
-            {isMenuOpen && (
-                <div className="lg:hidden absolute w-full bg-white shadow-xl border-t border-gray-200" id="mobile-menu" role="menu" aria-orientation="vertical">
-                    <div className="pt-2 pb-3 space-y-1 px-2 sm:px-3">
-                        {navItems.map((item) => (
-                            <NavLink key={item.page} item={item} isMobile={true} />
-                        ))}
-                    </div>
-                </div>
-            )}
-        </header>
-    );
-};
-
-// 2. Home Page Content
-const HomePage = React.memo(({ lang, navigate }) => {
-    const t = useTranslation(lang);
-
-    const featureCards = useMemo(() => ([
-        {
-            title: t('panel.program_overview'),
-            desc: t('panel.program_desc'),
-            link: STATIC_LINKS.baitia_home,
-            cta: t('cta.program_link'),
-            icon: <GraduationCap size={32} className="text-ncnu-gold" />
-        },
-        {
-            title: t('panel.curriculum_snapshot'),
-            desc: t('panel.curriculum_desc'),
-            // Click to navigate internally to the Curriculum page
-            internalPage: 'Curriculum',
-            cta: t('cta.curriculum_link'),
-            icon: <FileText size={32} className="text-ncnu-gold" />
-        },
-        {
-            title: t('panel.connect'),
-            desc: t('panel.connect_desc'),
-            internalPage: 'Admission',
-            cta: t('cta.admission_link'),
-            icon: <Pin size={32} className="text-ncnu-gold" />
-        },
-    ]), [t]);
-
-    return (
-        <main className="min-h-screen" role="main">
-            {/* Hero Section */}
-            <section
-                className="relative bg-ncnu-blue min-h-[50vh] flex items-center justify-center p-4 md:p-8 overflow-hidden"
-            >
-                {/* Background graphic for visual interest (abstract wave/grid) */}
-                <svg className="absolute inset-0 w-full h-full opacity-10" viewBox="0 0 100 100" preserveAspectRatio="none">
-                    <defs>
-                        <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
-                            <path d="M 10 0 L 0 0 0 10" fill="none" stroke="white" strokeWidth="0.1" />
-                        </pattern>
-                    </defs>
-                    <rect width="100" height="100" fill="url(#grid)" />
-                </svg>
-
-                <div className="text-center max-w-4xl text-white py-16 relative z-10">
-                    <h2 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold mb-4 motion-safe:animate-fadeIn">
-                        {t('hero.title')}
-                    </h2>
-                    <p className="text-xl sm:text-2xl font-light mb-8 motion-safe:animate-fadeIn" style={{ animationDelay: '0.2s' }}>
-                        {t('hero.subtitle')}
-                    </p>
-                    <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4 motion-safe:animate-fadeIn" style={{ animationDelay: '0.4s' }}>
-                        <CTAButton text={t('cta.apply')} url={STATIC_LINKS.apply_now} primary={true} />
-                        {/* Corrected: Use onClick for internal navigation */}
-                        <CTAButton text={t('cta.curriculum')} onClick={() => navigate('Curriculum')} primary={false} />
-                        <CTAButton text={t('cta.contact')} onClick={() => navigate('Admission')} primary={false} />
-                    </div>
-                </div>
-            </section>
-
-            {/* Featured Panels Section */}
-            <section className="py-16 bg-gray-50" aria-labelledby="program-features">
-                <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8">
-                    {featureCards.map((card, index) => (
-                        <a
-                            key={index}
-                            href={card.link || '#'}
-                            target={card.link ? "_blank" : "_self"}
-                            rel={card.link ? "noopener noreferrer" : undefined}
-                            onClick={(e) => {
-                                if (card.internalPage) {
-                                    e.preventDefault();
-                                    navigate(card.internalPage);
-                                }
-                            }}
-                            className="block p-6 bg-white rounded-xl shadow-lg hover:shadow-2xl transition duration-500 transform hover:-translate-y-1 group border-t-4 border-ncnu-blue hover:border-ncnu-gold focus:outline-none focus:ring-4 focus:ring-ncnu-gold/50"
-                            aria-label={`${card.title} - ${card.cta}`}
-                            tabIndex="0"
-                        >
-                            <div className="flex items-center space-x-4 mb-4">
-                                {card.icon}
-                                <h3 id={`feature-title-${index}`} className="text-xl font-bold text-ncnu-blue group-hover:text-ncnu-gold transition duration-300">
-                                    {card.title}
-                                </h3>
+                    <!-- Mobile Menu Panel -->
+                    ${isMenuOpen ? `
+                        <div class="lg:hidden absolute w-full bg-white shadow-xl border-t border-gray-200" id="mobile-menu" role="menu" aria-orientation="vertical">
+                            <div class="pt-2 pb-3 space-y-1 px-2 sm:px-3">
+                                ${mobileNavItems}
                             </div>
-                            <p className="text-gray-600 mb-6">{card.desc}</p>
-                            <div className="text-ncnu-blue font-semibold group-hover:text-ncnu-gold transition duration-300 flex items-center">
-                                {card.cta} &rarr;
-                            </div>
-                        </a>
-                    ))}
-                </div>
-            </section>
-        </main>
-    );
-});
-
-// 3. Curriculum Planning Page Content
-const CurriculumPage = React.memo(({ lang }) => {
-    const t = useTranslation(lang);
-    const linkText = lang === 'en' ? 'BAITIA Official Curriculum Planning Page' : '企管系官方課程規劃頁';
-
-    const [explanations, setExplanations] = useState({});
-    const [loadingCourse, setLoadingCourse] = useState(null);
-    const [error, setError] = useState(null);
-
-    const SYSTEM_PROMPT = lang === 'en'
-        ? "You are a helpful and concise academic advisor for a Master's program in Business Management and IT Innovation. Your task is to explain how a specific course relates to the convergence of business strategy, technology, and innovation. Respond only with a single, clear, one-sentence explanation."
-        : "您是企業管理與資訊科技創新碩士學程的有用且簡潔的學術顧問。您的任務是解釋特定課程如何與商業策略、技術和創新的融合相關。僅用一個清晰的句子回答。";
-
-    const handleExplainCourse = useCallback(async (courseName) => {
-        if (loadingCourse === courseName) return;
-        setLoadingCourse(courseName);
-        setError(null);
-        setExplanations(prev => ({ ...prev, [courseName]: t('curriculum.explain_loading') }));
-
-        const userQuery = lang === 'en' 
-            ? `Explain the course: ${courseName}`
-            : `請解釋課程：${courseName}`;
-
-        const payload = {
-            contents: [{ parts: [{ text: userQuery }] }],
-            systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+                        </div>
+                    ` : ''}
+                </header>
+            `;
         };
 
-        try {
-            const result = await generateContentWithBackoff(payload);
-            setExplanations(prev => ({ ...prev, [courseName]: result }));
-        } catch (e) {
-            console.error(e);
-            setExplanations(prev => ({ ...prev, [courseName]: t('curriculum.explain_error') }));
-            setError(t('curriculum.explain_error'));
-        } finally {
-            setLoadingCourse(null);
-        }
-    }, [loadingCourse, t, lang]);
+        function renderHomePage() {
+            const featureCards = [
+                {
+                    title: t('panel.program_overview'),
+                    desc: t('panel.program_desc'),
+                    link: STATIC_LINKS.baitia_home,
+                    cta: t('cta.program_link'),
+                    icon: 'GraduationCap',
+                    internalPage: null
+                },
+                {
+                    title: t('panel.curriculum_snapshot'),
+                    desc: t('panel.curriculum_desc'),
+                    link: '#',
+                    cta: t('cta.curriculum_link'),
+                    icon: 'FileText',
+                    internalPage: 'Curriculum'
+                },
+                {
+                    title: t('panel.connect'),
+                    desc: t('panel.connect_desc'),
+                    link: '#',
+                    cta: t('cta.admission_link'),
+                    icon: 'Pin',
+                    internalPage: 'Admission'
+                },
+            ];
 
-    return (
-        <main className="max-w-6xl mx-auto p-4 py-12 min-h-screen" role="main">
-            <h2 className="text-4xl font-extrabold text-ncnu-blue mb-6 border-b-4 border-ncnu-gold pb-2">
-                {t('curriculum.title')}
-            </h2>
-
-            {/* Official Link */}
-            <div className="bg-blue-50 p-6 rounded-xl shadow-md mb-8 flex flex-col md:flex-row items-center justify-between gap-4 border border-blue-200">
-                <p className="text-lg text-ncnu-blue font-medium flex-1">
-                    {t('curriculum.link_desc')}
-                </p>
-                <a
-                    href={STATIC_LINKS.curriculum_planning}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-6 py-2 bg-ncnu-blue text-white font-bold rounded-lg hover:bg-ncnu-gold hover:text-ncnu-blue transition duration-300 whitespace-nowrap focus:outline-none focus:ring-4 focus:ring-ncnu-blue/50"
+            const cardHTML = featureCards.map((card, index) => `
+                <a href="${card.link || '#'}" 
+                    target="${card.link && card.link !== '#' ? '_blank' : '_self'}"
+                    rel="${card.link && card.link !== '#' ? 'noopener noreferrer' : ''}"
+                    onclick="${card.internalPage ? `event.preventDefault(); updateState({ currentPage: '${card.internalPage}' })` : ''}"
+                    class="block p-6 bg-white rounded-xl shadow-lg hover:shadow-2xl transition duration-500 transform hover:-translate-y-1 group border-t-4 border-ncnu-blue hover:border-ncnu-gold focus:outline-none focus:ring-4 focus:ring-ncnu-gold/50"
+                    aria-label="${card.title} - ${card.cta}"
+                    tabIndex="0"
                 >
-                    {linkText}
+                    <div class="flex items-center space-x-4 mb-4">
+                        ${renderIcon(card.icon, 'w-8 h-8 text-ncnu-gold')}
+                        <h3 id="feature-title-${index}" class="text-xl font-bold text-ncnu-blue group-hover:text-ncnu-gold transition duration-300">
+                            ${card.title}
+                        </h3>
+                    </div>
+                    <p class="text-gray-600 mb-6">${card.desc}</p>
+                    <div class="text-ncnu-blue font-semibold group-hover:text-ncnu-gold transition duration-300 flex items-center">
+                        ${card.cta} ${renderIcon('ArrowRight', 'w-4 h-4 ml-1')}
+                    </div>
                 </a>
-            </div>
+            `).join('');
 
-            {/* Course List */}
-            <h3 className="text-3xl font-bold text-ncnu-blue mt-10 mb-6">
-                {t('curriculum.course_title')}
-            </h3>
-            {error && (
-                <div role="alert" className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded-lg">
-                    <p className="font-bold">LLM Service Error</p>
-                    <p>{error}</p>
-                </div>
-            )}
-            <div className="grid grid-cols-1 gap-4">
-                {t('curriculum.courses').map((course, index) => (
-                    <div
-                        key={index}
-                        className="p-4 bg-white rounded-xl shadow-lg border-l-8 border-ncnu-blue/30 hover:border-ncnu-gold transition duration-300"
-                    >
-                        <div className="flex justify-between items-start flex-col sm:flex-row sm:items-center gap-3">
-                            <p className="text-lg font-bold text-gray-900 leading-relaxed">
-                                {course}
+            return `
+                <main class="min-h-screen" role="main">
+                    <!-- Hero Section -->
+                    <section class="relative bg-ncnu-blue min-h-[50vh] flex items-center justify-center p-4 md:p-8 overflow-hidden">
+                        <!-- Background graphic for visual interest (abstract wave/grid) -->
+                        <svg class="absolute inset-0 w-full h-full opacity-10" viewBox="0 0 100 100" preserveAspectRatio="none">
+                            <defs>
+                                <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
+                                    <path d="M 10 0 L 0 0 0 10" fill="none" stroke="white" stroke-width="0.1" />
+                                </pattern>
+                            </defs>
+                            <rect width="100" height="100" fill="url(#grid)" />
+                        </svg>
+
+                        <div class="text-center max-w-4xl text-white py-16 relative z-10">
+                            <h2 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold mb-4 motion-safe:animate-fadeIn">
+                                ${t('hero.title')}
+                            </h2>
+                            <p class="text-xl sm:text-2xl font-light mb-8 motion-safe:animate-fadeIn" style="animation-delay: 0.2s;">
+                                ${t('hero.subtitle')}
+                            </p>
+                            <div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4 motion-safe:animate-fadeIn" style="animation-delay: 0.4s;">
+                                ${renderCTAButton(t('cta.apply'), STATIC_LINKS.apply_now, true)}
+                                ${renderCTAButton(t('cta.curriculum'), '#', false, 'Curriculum')}
+                                ${renderCTAButton(t('cta.contact'), '#', false, 'Admission')}
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Featured Panels Section -->
+                    <section class="py-16 bg-gray-50" aria-labelledby="program-features">
+                        <div class="max-w-6xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8">
+                            ${cardHTML}
+                        </div>
+                    </section>
+                </main>
+            `;
+        };
+        
+        function renderCurriculumPage() {
+            const linkText = window.appState.lang === 'en' ? 'BAITIA Official Curriculum Planning Page' : '企管系官方課程規劃頁';
+            const { loadingCourse, explanations } = window.appState;
+
+            const courseListHTML = t('curriculum.courses').map((course, index) => {
+                const isCurrentLoading = loadingCourse === course;
+                const explanation = explanations[course] || '';
+
+                return `
+                    <div class="p-4 bg-white rounded-xl shadow-lg border-l-8 border-ncnu-blue/30 hover:border-ncnu-gold transition duration-300">
+                        <div class="flex justify-between items-start flex-col sm:flex-row sm:items-center gap-3">
+                            <p class="text-lg font-bold text-gray-900 leading-relaxed">
+                                ${course}
                             </p>
                             <button
-                                onClick={() => handleExplainCourse(course)}
-                                disabled={!!loadingCourse}
-                                aria-label={loadingCourse === course ? t('curriculum.explain_loading') : `${t('curriculum.explain_cta')} for ${course}`}
-                                className={`flex items-center space-x-2 px-4 py-1.5 text-sm font-semibold rounded-full transition duration-300 whitespace-nowrap
-                                    ${loadingCourse === course
+                                onclick="handleExplainCourse('${course.replace(/'/g, "\\'")}')"
+                                ${isCurrentLoading ? 'disabled' : ''}
+                                aria-label="${isCurrentLoading ? t('curriculum.explain_loading') : `${t('curriculum.explain_cta')} for ${course}`}"
+                                class="flex items-center space-x-2 px-4 py-1.5 text-sm font-semibold rounded-full transition duration-300 whitespace-nowrap
+                                    ${isCurrentLoading
                                         ? 'bg-gray-400 text-gray-800 cursor-not-allowed'
                                         : 'bg-ncnu-blue text-white hover:bg-ncnu-gold hover:text-ncnu-blue transform hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-4 focus:ring-ncnu-blue/50'
-                                    }`}
+                                    }"
                             >
-                                {loadingCourse === course ? (
-                                    <>
-                                        <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                        <span>{t('curriculum.explain_loading')}</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Zap size={16} className="text-ncnu-gold" />
-                                        <span>{t('curriculum.explain_cta')}</span>
-                                    </>
-                                )}
+                                ${isCurrentLoading ? `
+                                    <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <span>${t('curriculum.explain_loading')}</span>
+                                ` : `
+                                    ${renderIcon('Zap', 'w-4 h-4 text-ncnu-gold')}
+                                    <span>${t('curriculum.explain_cta')}</span>
+                                `}
                             </button>
                         </div>
                         
-                        {/* Course Explanation Display */}
-                        {explanations[course] && (
-                            <div className="mt-3 p-3 bg-ncnu-blue/5 rounded-lg border-l-4 border-ncnu-gold/80 text-gray-700 text-sm italic">
-                                {explanations[course]}
+                        ${explanation ? `
+                            <div class="mt-3 p-3 bg-ncnu-blue/5 rounded-lg border-l-4 border-ncnu-gold/80 text-gray-700 text-sm italic">
+                                ${explanation}
                             </div>
-                        )}
+                        ` : ''}
                     </div>
-                ))}
-            </div>
-        </main>
-    );
-});
+                `;
+            }).join('');
 
-// 4. Admission Page Content
-const AdmissionPage = React.memo(({ lang }) => {
-    const t = useTranslation(lang);
+            return `
+                <main class="max-w-6xl mx-auto p-4 py-12 min-h-screen" role="main">
+                    <h2 class="text-4xl font-extrabold text-ncnu-blue mb-6 border-b-4 border-ncnu-gold pb-2">
+                        ${t('curriculum.title')}
+                    </h2>
 
-    const stepCards = useMemo(() => ([
-        {
-            step: "Step 1",
-            title: t('admission.step1'),
-            icon: <FileText size={28} />,
-            content: (
-                <>
-                    <h4 className="font-semibold text-lg mb-3">{t('admission.checklist_title')}</h4>
-                    <ul className="space-y-2 list-disc pl-5">
-                        {t('admission.docs').map((doc, i) => (
-                            <li key={i} className="text-sm text-gray-600">{doc}</li>
-                        ))}
-                    </ul>
-                </>
-            )
-        },
-        {
-            step: "Step 2",
-            title: t('admission.step2'),
-            icon: <DollarSign size={28} />,
-            content: (
-                <>
-                    <h4 className="font-semibold text-lg mb-2 text-ncnu-blue">{t('admission.grad_title')}</h4>
-                    <ul className="space-y-2 list-disc pl-5 mb-6">
-                        {t('admission.grad_reqs').map((req, i) => (
-                            <li key={`req-${i}`} className="text-sm text-gray-600">{req}</li>
-                        ))}
-                    </ul>
-
-                    <h4 className="font-semibold text-lg mb-2 text-ncnu-blue">{t('admission.fees_title')}</h4>
-                    <ul className="space-y-1 list-disc pl-5">
-                        {Object.values(t('admission.fees_details')).map((fee, i) => (
-                            <li key={`fee-${i}`} className="text-sm text-gray-600">{fee}</li>
-                        ))}
-                    </ul>
-                </>
-            )
-        },
-        {
-            step: "Step 3",
-            title: t('admission.step3'),
-            icon: <Mail size={28} />,
-            content: (
-                <div className="space-y-4">
-                    <h4 className="font-semibold text-lg border-b pb-1 mb-2 text-ncnu-blue">{t('admission.contact_title')}</h4>
-                    <div className="text-sm space-y-2">
-                        <p className="flex items-center space-x-2">
-                            <Mail size={16} className="text-ncnu-gold" />
-                            <span className="font-medium">{t('admission.contact_email')}</span> <a href="mailto:baitia@ncnu.edu.tw" className="text-ncnu-blue hover:underline">baitia@ncnu.edu.tw</a>
+                    <!-- Official Link -->
+                    <div class="bg-blue-50 p-6 rounded-xl shadow-md mb-8 flex flex-col md:flex-row items-center justify-between gap-4 border border-blue-200">
+                        <p class="text-lg text-ncnu-blue font-medium flex-1">
+                            ${t('curriculum.link_desc')}
                         </p>
-                        <p className="flex items-center space-x-2">
-                            <Phone size={16} className="text-ncnu-gold" />
-                            <span className="font-medium">{t('admission.contact_phone')}</span> +886-49-2910960 ext. 2005
-                        </p>
-                        <p className="text-sm flex items-start space-x-2">
-                            <Clock size={16} className="text-ncnu-gold mt-0.5" />
-                            <div>
-                                <span className="font-medium block">{t('admission.contact_hours')}</span>
-                                <span className="text-gray-600">{t('admission.contact_hours_detail')}</span>
-                            </div>
-                        </p>
-                    </div>
-                    
-                    <div className="pt-4 space-y-3">
-                        <CTAButton text={t('admission.apply_cta')} url={STATIC_LINKS.apply_now} primary={true} />
-                    </div>
-                </div>
-            )
-        }
-    ]), [t]);
-
-    return (
-        <main className="max-w-7xl mx-auto p-4 py-12 min-h-screen" role="main">
-            <h2 className="text-4xl font-extrabold text-ncnu-blue mb-10 text-center">
-                {t('admission.title')}
-            </h2>
-
-            {/* Application Steps */}
-            <section className="mb-12" aria-labelledby="application-steps">
-                <h3 id="application-steps" className="text-3xl font-bold text-ncnu-blue mb-8 text-center">{t('admission.steps_title')}</h3>
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {stepCards.map((card, index) => (
-                        <div
-                            key={index}
-                            className="bg-white p-6 rounded-xl shadow-xl transition duration-500 hover:shadow-2xl border-t-8 border-ncnu-gold/80 hover:border-ncnu-blue transform hover:-translate-y-0.5"
-                            role="region"
-                            aria-labelledby={`step-title-${index}`}
+                        <a
+                            href="${STATIC_LINKS.curriculum_planning}"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="px-6 py-2 bg-ncnu-blue text-white font-bold rounded-lg hover:bg-ncnu-gold hover:text-ncnu-blue transition duration-300 whitespace-nowrap focus:outline-none focus:ring-4 focus:ring-ncnu-blue/50"
                         >
-                            <div className="flex items-center space-x-4 text-ncnu-blue mb-4">
-                                {card.icon}
-                                <span className="text-xl font-extrabold">{card.step}</span>
-                            </div>
-                            <h4 id={`step-title-${index}`} className="text-2xl font-bold text-ncnu-blue mb-4">
-                                {card.title}
-                            </h4>
-                            <div className="text-gray-700">{card.content}</div>
-                        </div>
-                    ))}
-                </div>
-            </section>
-        </main>
-    );
-});
-
-// 5. Global Footer
-const Footer = React.memo(({ lang }) => {
-    const t = useTranslation(lang);
-    const socialLinks = useMemo(() => ([
-        { icon: Facebook, url: STATIC_LINKS.social.facebook, name: "Facebook" },
-        { icon: Instagram, url: STATIC_LINKS.social.instagram, name: "Instagram" },
-        { icon: Youtube, url: STATIC_LINKS.social.youtube, name: "YouTube" }
-    ]), []);
-
-    return (
-        <footer className="bg-gray-900 text-white pt-12 pb-6" role="contentinfo">
-            <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8 border-b border-gray-700 pb-8">
-                {/* Contact Info */}
-                <div>
-                    <h4 className="text-xl font-bold mb-4 text-ncnu-gold">{t('site.department_short')}</h4>
-                    <p className="text-sm mb-2 font-semibold">{t('footer.contact')}</p>
-                    <a href={`mailto:${t('footer.contact_email')}`} className="text-gray-300 hover:text-ncnu-gold transition duration-300 text-sm">
-                        {t('footer.contact_email')}
-                    </a>
-                </div>
-
-                {/* Address */}
-                <div>
-                    <h4 className="text-xl font-bold mb-4 text-ncnu-gold">{t('site.subline')}</h4>
-                    <p className="text-sm font-semibold mb-2">{t('footer.address')}</p>
-                    <p className="text-gray-300 text-sm">{t('footer.address_detail')}</p>
-                    <a href={STATIC_LINKS.ncnu} target="_blank" rel="noopener noreferrer" className="text-ncnu-gold/80 hover:text-white text-sm mt-2 block transition duration-300">
-                        &rarr; {t('site.subline')}
-                    </a>
-                </div>
-
-                {/* Social Links */}
-                <div>
-                    <h4 className="text-xl font-bold mb-4 text-ncnu-gold">Follow Us</h4>
-                    <div className="flex space-x-4">
-                        {socialLinks.map((social, index) => (
-                            <a
-                                key={index}
-                                href={social.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                aria-label={`BAITIA on ${social.name}`}
-                                className="text-gray-400 hover:text-ncnu-gold transition duration-300 p-2 rounded-full border border-gray-600 hover:border-ncnu-gold focus:outline-none focus:ring-2 focus:ring-ncnu-gold"
-                            >
-                                <social.icon size={24} />
-                            </a>
-                        ))}
+                            ${linkText}
+                        </a>
                     </div>
+
+                    <!-- Course List -->
+                    <h3 class="text-3xl font-bold text-ncnu-blue mt-10 mb-6">
+                        ${t('curriculum.course_title')}
+                    </h3>
+                    <div class="grid grid-cols-1 gap-4">
+                        ${courseListHTML}
+                    </div>
+                </main>
+            `;
+        };
+
+        function renderAdmissionPage() {
+            const stepCards = [
+                {
+                    step: "Step 1",
+                    title: t('admission.step1'),
+                    icon: 'FileText',
+                    content: `
+                        <h4 class="font-semibold text-lg mb-3">${t('admission.checklist_title')}</h4>
+                        <ul class="space-y-2 list-disc pl-5">
+                            ${t('admission.docs').map(doc => `<li class="text-sm text-gray-600">${doc}</li>`).join('')}
+                        </ul>
+                    `
+                },
+                {
+                    step: "Step 2",
+                    title: t('admission.step2'),
+                    icon: 'DollarSign',
+                    content: `
+                        <h4 class="font-semibold text-lg mb-2 text-ncnu-blue">${t('admission.grad_title')}</h4>
+                        <ul class="space-y-2 list-disc pl-5 mb-6">
+                            ${t('admission.grad_reqs').map(req => `<li class="text-sm text-gray-600">${req}</li>`).join('')}
+                        </ul>
+
+                        <h4 class="font-semibold text-lg mb-2 text-ncnu-blue">${t('admission.fees_title')}</h4>
+                        <ul class="space-y-1 list-disc pl-5">
+                            ${Object.values(t('admission.fees_details')).map(fee => `<li class="text-sm text-gray-600">${fee}</li>`).join('')}
+                        </ul>
+                    `
+                },
+                {
+                    step: "Step 3",
+                    title: t('admission.step3'),
+                    icon: 'Mail',
+                    content: `
+                        <div class="space-y-4">
+                            <h4 class="font-semibold text-lg border-b pb-1 mb-2 text-ncnu-blue">${t('admission.contact_title')}</h4>
+                            <div class="text-sm space-y-2">
+                                <p class="flex items-center space-x-2">
+                                    ${renderIcon('Mail', 'w-4 h-4 text-ncnu-gold')}
+                                    <span class="font-medium">${t('admission.contact_email')}</span> 
+                                    <a href="mailto:baitia@ncnu.edu.tw" class="text-ncnu-blue hover:underline">baitia@ncnu.edu.tw</a>
+                                </p>
+                                <p class="flex items-center space-x-2">
+                                    ${renderIcon('Phone', 'w-4 h-4 text-ncnu-gold')}
+                                    <span class="font-medium">${t('admission.contact_phone')}</span> +886-49-2910960 ext. 2005
+                                </p>
+                                <p class="text-sm flex items-start space-x-2">
+                                    ${renderIcon('Clock', 'w-4 h-4 text-ncnu-gold mt-0.5')}
+                                    <div>
+                                        <span class="font-medium block">${t('admission.contact_hours')}</span>
+                                        <span class="text-gray-600">${t('admission.contact_hours_detail')}</span>
+                                    </div>
+                                </p>
+                            </div>
+                            
+                            <div class="pt-4 space-y-3">
+                                ${renderCTAButton(t('admission.apply_cta'), STATIC_LINKS.apply_now, true)}
+                            </div>
+                        </div>
+                    `
+                }
+            ];
+
+            const stepCardsHTML = stepCards.map((card, index) => `
+                <div class="bg-white p-6 rounded-xl shadow-xl transition duration-500 hover:shadow-2xl border-t-8 border-ncnu-gold/80 hover:border-ncnu-blue transform hover:-translate-y-0.5"
+                    role="region" aria-labelledby="step-title-${index}">
+                    <div class="flex items-center space-x-4 text-ncnu-blue mb-4">
+                        ${renderIcon(card.icon, 'w-7 h-7')}
+                        <span class="text-xl font-extrabold">${card.step}</span>
+                    </div>
+                    <h4 id="step-title-${index}" class="text-2xl font-bold text-ncnu-blue mb-4">
+                        ${card.title}
+                    </h4>
+                    <div class="text-gray-700">${card.content}</div>
                 </div>
-            </div>
+            `).join('');
 
-            {/* Copyright */}
-            <div className="max-w-6xl mx-auto px-4 mt-6 text-center text-xs text-gray-500">
-                <p>{t('footer.copyright')}</p>
-            </div>
-        </footer>
-    );
-});
+            return `
+                <main class="max-w-7xl mx-auto p-4 py-12 min-h-screen" role="main">
+                    <h2 class="text-4xl font-extrabold text-ncnu-blue mb-10 text-center">
+                        ${t('admission.title')}
+                    </h2>
 
-// 6. Main App Component
-const App = () => {
-    const [lang, setLang] = useState('en');
-    const [currentPage, setCurrentPage] = useState('Home');
-    const t = useTranslation(lang);
-
-    // 1. Google Analytics/Tag Manager Script Injection & Global Styling
-    useEffect(() => {
-        // Function to safely inject scripts
-        const injectScript = (src, async = true, content = null) => {
-            const script = document.createElement('script');
-            script.async = async;
-            if (src) script.src = src;
-            if (content) script.textContent = content;
-            document.head.appendChild(script);
-            return script;
+                    <!-- Application Steps -->
+                    <section class="mb-12" aria-labelledby="application-steps">
+                        <h3 id="application-steps" class="text-3xl font-bold text-ncnu-blue mb-8 text-center">${t('admission.steps_title')}</h3>
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            ${stepCardsHTML}
+                        </div>
+                    </section>
+                </main>
+            `;
         };
 
-        // Inject Google Tag Manager Script (Immediately after <head>)
-        const gtagScript = injectScript("https://www.googletagmanager.com/gtag/js?id=G-XCR8GF65FX");
-        const gtagInitScript = injectScript(null, false, `
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'G-XCR8GF65FX');
-        `);
+        function renderFooter() {
+            const socialLinks = [
+                { icon: 'Facebook', url: STATIC_LINKS.social.facebook, name: "Facebook" },
+                { icon: 'Instagram', url: STATIC_LINKS.social.instagram, name: "Instagram" },
+                { icon: 'Youtube', url: STATIC_LINKS.social.youtube, name: "YouTube" }
+            ];
 
-        // Global Styling/Theme Color Update (Sky Blue Theme)
-        const style = document.createElement('style');
-        style.textContent = `
-            :root {
-                /* Primary/Main theme color: Dark Navy/Contrast (#0C4A6E) */
-                --color-ncnu-blue: 12 74 110;  
-                /* Accent/Highlight color: Vibrant Sky Blue (#00BFFF) */
-                --color-ncnu-gold: 0 191 255;  
-            }
-            .bg-ncnu-blue { background-color: rgb(var(--color-ncnu-blue)); }
-            .text-ncnu-blue { color: rgb(var(--color-ncnu-blue)); }
-            .border-ncnu-blue { border-color: rgb(var(--color-ncnu-blue)); }
-            .bg-ncnu-gold { background-color: rgb(var(--color-ncnu-gold)); }
-            .text-ncnu-gold { color: rgb(var(--color-ncnu-gold)); }
-            .border-ncnu-gold { border-color: rgb(var(--color-ncnu-gold)); }
-            /* Global Font Setting */
-            body { 
-                font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif; 
-                scroll-behavior: smooth;
-            }
-            .motion-safe\\:animate-fadeIn {
-                animation: fadeIn 0.5s ease-out forwards;
-                opacity: 0;
-            }
-            @keyframes fadeIn {
-                to { opacity: 1; }
-            }
-        `;
-        document.head.appendChild(style);
-        document.body.className = "font-inter antialiased bg-gray-50";
+            const socialLinksHTML = socialLinks.map(social => `
+                <a href="${social.url}" target="_blank" rel="noopener noreferrer"
+                    aria-label="BAITIA on ${social.name}"
+                    class="text-gray-400 hover:text-ncnu-gold transition duration-300 p-2 rounded-full border border-gray-600 hover:border-ncnu-gold focus:outline-none focus:ring-2 focus:ring-ncnu-gold">
+                    ${renderIcon(social.icon, 'w-6 h-6')}
+                </a>
+            `).join('');
 
-        return () => { 
-            // Cleanup: important for a multi-instance environment
-            document.head.removeChild(gtagScript);
-            document.head.removeChild(gtagInitScript);
-            document.head.removeChild(style);
+            return `
+                <footer class="bg-gray-900 text-white pt-12 pb-6" role="contentinfo">
+                    <div class="max-w-6xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8 border-b border-gray-700 pb-8">
+                        <!-- Contact Info -->
+                        <div>
+                            <h4 class="text-xl font-bold mb-4 text-ncnu-gold">${t('site.department_short')}</h4>
+                            <p class="text-sm mb-2 font-semibold">${t('footer.contact')}</p>
+                            <a href="mailto:${t('footer.contact_email')}" class="text-gray-300 hover:text-ncnu-gold transition duration-300 text-sm">
+                                ${t('footer.contact_email')}
+                            </a>
+                        </div>
+
+                        <!-- Address -->
+                        <div>
+                            <h4 class="text-xl font-bold mb-4 text-ncnu-gold">${t('site.subline')}</h4>
+                            <p class="text-sm font-semibold mb-2">${t('footer.address')}</p>
+                            <p class="text-gray-300 text-sm">${t('footer.address_detail')}</p>
+                            <a href="${STATIC_LINKS.ncnu}" target="_blank" rel="noopener noreferrer" class="text-ncnu-gold/80 hover:text-white text-sm mt-2 block transition duration-300">
+                                &rarr; ${t('site.subline')}
+                            </a>
+                        </div>
+
+                        <!-- Social Links -->
+                        <div>
+                            <h4 class="text-xl font-bold mb-4 text-ncnu-gold">Follow Us</h4>
+                            <div class="flex space-x-4">
+                                ${socialLinksHTML}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Copyright -->
+                    <div class="max-w-6xl mx-auto px-4 mt-6 text-center text-xs text-gray-500">
+                        <p>${t('footer.copyright')}</p>
+                    </div>
+                </footer>
+            `;
         };
-    }, []);
 
-    // 2. Handle SEO/Metadata change on language switch/page load
-    useEffect(() => {
-        document.title = t('meta.title');
-        let metaDescription = document.querySelector('meta[name="description"]');
-        if (!metaDescription) {
-            metaDescription = document.createElement('meta');
-            metaDescription.name = "description";
-            document.head.appendChild(metaDescription);
+        function renderApp() {
+            const appDiv = document.getElementById('app');
+            const { currentPage } = window.appState;
+
+            let mainContent = '';
+            switch (currentPage) {
+                case 'Curriculum':
+                    mainContent = renderCurriculumPage();
+                    break;
+                case 'Admission':
+                    mainContent = renderAdmissionPage();
+                    break;
+                case 'Home':
+                default:
+                    mainContent = renderHomePage();
+                    break;
+            }
+            
+            // Update metadata for SEO/UX
+            document.title = t('meta.title');
+            document.documentElement.lang = window.appState.lang;
+
+            appDiv.innerHTML = `
+                ${renderHeader()}
+                <div class="flex-grow">
+                    ${mainContent}
+                </div>
+                ${renderFooter()}
+            `;
+
+            // IMPORTANT: Initialize Lucide icons after the new content is inserted into the DOM.
+            // This is the correct way to use the Lucide CDN script.
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        };
+
+        // --- INITIALIZATION ---
+        // Get initial state
+        let lang = localStorage.getItem('appLang') || 'en';
+        let currentPage = 'Home';
+        let explanations = {}; // Cache for LLM responses
+        let loadingCourse = null;
+        
+        // Initialize global state object
+        window.appState = { lang, currentPage, explanations, loadingCourse, isMenuOpen: false, isDropdownOpen: false };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderApp();
+        });
+
+        // Ensure state is updated when the DOM is ready if it loads late
+        if (document.readyState === 'complete') {
+            renderApp();
         }
-        metaDescription.content = t('meta.description');
-        document.documentElement.lang = lang; 
-    }, [lang, t]);
 
-
-    // Simple client-side routing
-    const renderPage = () => {
-        switch (currentPage) {
-            case 'Curriculum':
-                return <CurriculumPage lang={lang} />;
-            case 'Admission':
-                return <AdmissionPage lang={lang} />;
-            case 'Home':
-            default:
-                return <HomePage lang={lang} navigate={setCurrentPage} />;
-        }
-    };
-
-    return (
-        <div className="min-h-screen flex flex-col">
-            <Header 
-                lang={lang} 
-                setLang={setLang} 
-                currentPage={currentPage} 
-                setCurrentPage={setCurrentPage} 
-            />
-            <div className="flex-grow">
-                {renderPage()}
-            </div>
-            <Footer lang={lang} />
-        </div>
-    );
-};
-
-export default App;
+    </script>
+</body>
+</html>
